@@ -1,0 +1,84 @@
+specVersion: 0.0.2
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum/contract
+    name: Contract
+    network: mainnet
+    source:
+      address: "0x443D2f2755DB5942601fa062Cc248aAA153313D3"
+      abi: Contract
+      startBlock: 10722554
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.4
+      language: wasm/assemblyscript
+      entities:
+        - Advance
+        # - Bond
+        # - Commit
+        # - CouponApproval
+        - CouponExpiration
+        - CouponPurchase
+        - CouponRedemption
+        # - CouponTransfer
+        # - Deposit
+        # - Incentivization
+        # - Proposal
+        - SupplyDecrease
+        - SupplyIncrease
+        - SupplyNeutral
+        # - Transfer
+        # - Unbond
+        # - Upgraded
+        # - Vote
+        # - Withdraw
+      abis:
+        - name: Contract
+          file: ./abis/Contract.json
+        - name: LPContract
+          file: ./abis/LPContract.json
+        - name: DollarContract
+          file: ./abis/DollarContract.json
+        - name: UniswapV2PairContract
+          file: ./abis/UniswapV2PairContract.json
+      eventHandlers:
+        - event: Advance(indexed uint256,uint256,uint256)
+          handler: handleAdvance
+        # - event: Bond(indexed address,uint256,uint256,uint256)
+        #   handler: handleBond
+        # - event: Commit(indexed address,indexed address)
+        #   handler: handleCommit
+        # - event: CouponApproval(indexed address,indexed address,uint256)
+        #   handler: handleCouponApproval
+        - event: CouponExpiration(indexed uint256,uint256,uint256,uint256,uint256)
+          handler: handleCouponExpiration
+        - event: CouponPurchase(indexed address,indexed uint256,uint256,uint256)
+          handler: handleCouponPurchase
+        - event: CouponRedemption(indexed address,indexed uint256,uint256)
+          handler: handleCouponRedemption
+        # - event: CouponTransfer(indexed address,indexed address,indexed uint256,uint256)
+        #   handler: handleCouponTransfer
+        # - event: Deposit(indexed address,uint256)
+        #   handler: handleDeposit
+        # - event: Incentivization(indexed address,uint256)
+        #   handler: handleIncentivization
+        # - event: Proposal(indexed address,indexed address,indexed uint256,uint256)
+        #   handler: handleProposal
+        - event: SupplyDecrease(indexed uint256,uint256,uint256)
+          handler: handleSupplyDecrease
+        - event: SupplyIncrease(indexed uint256,uint256,uint256,uint256,uint256)
+          handler: handleSupplyIncrease
+        - event: SupplyNeutral(indexed uint256)
+          handler: handleSupplyNeutral
+        # - event: Transfer(indexed address,indexed address,uint256)
+        #   handler: handleTransfer
+        # - event: Unbond(indexed address,uint256,uint256,uint256)
+        #   handler: handleUnbond
+        # - event: Upgraded(indexed address)
+        #   handler: handleUpgraded
+        # - event: Vote(indexed address,indexed address,uint8,uint256)
+        #   handler: handleVote
+        # - event: Withdraw(indexed address,uint256)
+        #   handler: handleWithdraw
+      file: ./src/mapping.ts

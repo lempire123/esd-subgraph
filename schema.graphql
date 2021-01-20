@@ -1,0 +1,29 @@
+type Epoch @entity {
+  id: ID!
+  startDAOTotalBonded: BigInt
+  startDAOTotalStaged: BigInt
+  startTotalDebt: BigInt
+  startTotalRedeemable: BigInt
+  startTotalCoupons: BigInt
+  startTotalNet: BigInt
+
+  startTotalLPESD: BigInt
+  startTotalLPTokens: BigInt
+
+  startLPTotalBondedTokens: BigInt
+  startLPTotalStagedTokens: BigInt
+  startLPTotalBondedESD: BigInt
+  startLPTotalStagedESD: BigInt
+
+  startTimestamp: BigInt
+  startBlock: BigInt
+
+  expiredCoupons: BigInt
+  outstandingCoupons: BigInt
+  couponsExpiration: BigInt
+
+  oraclePrice: BigInt
+  deltaSupply: BigInt
+
+  bootstrappingAt: Boolean
+}
