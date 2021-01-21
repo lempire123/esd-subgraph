@@ -374,3 +374,85 @@ export class Epoch extends Entity {
     this.set("bootstrappingAt", Value.fromBoolean(value));
   }
 }
+
+export class Account extends Entity {
+  constructor(id: string) {
+    super();
+    this.set("id", Value.fromString(id));
+  }
+
+  save(): void {
+    let id = this.get("id");
+    assert(id !== null, "Cannot save Account entity without an ID");
+    assert(
+      id.kind == ValueKind.STRING,
+      "Cannot save Account entity with non-string ID. " +
+        'Considering using .toHex() to convert the "id" to a string.'
+    );
+    store.set("Account", id.toString(), this);
+  }
+
+  static load(id: string): Account | null {
+    return store.get("Account", id) as Account | null;
+  }
+
+  get id(): string {
+    let value = this.get("id");
+    return value.toString();
+  }
+
+  set id(value: string) {
+    this.set("id", Value.fromString(value));
+  }
+
+  get stagedBalance(): BigInt | null {
+    let value = this.get("stagedBalance");
+    if (value === null || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBigInt();
+    }
+  }
+
+  set stagedBalance(value: BigInt | null) {
+    if (value === null) {
+      this.unset("stagedBalance");
+    } else {
+      this.set("stagedBalance", Value.fromBigInt(value as BigInt));
+    }
+  }
+
+  get bondedBalance(): BigInt | null {
+    let value = this.get("bondedBalance");
+    if (value === null || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBigInt();
+    }
+  }
+
+  set bondedBalance(value: BigInt | null) {
+    if (value === null) {
+      this.unset("bondedBalance");
+    } else {
+      this.set("bondedBalance", Value.fromBigInt(value as BigInt));
+    }
+  }
+
+  get holdingBalance(): BigInt | null {
+    let value = this.get("holdingBalance");
+    if (value === null || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBigInt();
+    }
+  }
+
+  set holdingBalance(value: BigInt | null) {
+    if (value === null) {
+      this.unset("holdingBalance");
+    } else {
+      this.set("holdingBalance", Value.fromBigInt(value as BigInt));
+    }
+  }
+}

@@ -27,3 +27,10 @@ type Epoch @entity {
 
   bootstrappingAt: Boolean
 }
+
+type Account @entity {
+  id: ID!
+  stagedBalance: BigInt
+  bondedBalance: BigInt
+  holdingBalance: BigInt
+}
