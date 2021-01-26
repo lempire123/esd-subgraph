@@ -18,6 +18,7 @@ import {
 } from "../generated/Contract/LPContract"
 import {
   DollarContract,
+  Transfer
 } from "../generated/Contract/DollarContract"
 import {
   UniswapV2PairContract,
@@ -142,41 +143,39 @@ export function handleSupplyNeutral(event: SupplyNeutral): void {
 // handles deposit to DAO, funds move to staging
 export function handleDeposit(event: Deposit): void {
   let accountId = event.params.account.toHexString()
-  let account = Account.load(accountId)
+  let epochNo = getEpoch(event.block.timestamp.toI32())
+  let account = Account.load(accountId + epochNo.toString())
   if (account == null){
-    account = new Account(accountId)
+    account = new Account(accountId + epochNo.toString())
   }
 
   let contract = Contract.bind(event.address)
-  account.stagedBalance = account.stagedBalance + event.params.value
+  account.stagedBalance = contract.balanceOfStaged(Address.fromString(accountId))
   account.bondedBalance = contract.balanceOfBonded(Address.fromString(accountId))
   account.holdingBalance = contract.balanceOf(Address.fromString(accountId))
+  account.address = accountId
+  account.epochNo = epochNo
   log.debug("Depositing ESD to DAO {} {} {} {}", [event.params.account.toHexString(), account.stagedBalance.toString(), account.bondedBalance.toString(), account.holdingBalance.toString()])
   // account.holdingBalance = account.holdingBalance - event.params.value
-
-  let epochNo = getEpoch(event.block.timestamp.toI32())
-  account.epochNo = epochNo
   account.save()
 }
 
 export function handleWithdraw(event: Withdraw): void {
   let accountId = event.params.account.toHexString()
-  let account = Account.load(accountId)
+  let epochNo = getEpoch(event.block.timestamp.toI32())
+  let contract = Contract.bind(event.address)
+  let account = Account.load(accountId + epochNo.toString())
 
   if(account == null){
     log.debug("Unable to load User Entity {}", [event.params.account.toHexString()])
-    account.stagedBalance = BigInt.fromI32(0)
+    return
   }
-  else{
-    account.stagedBalance = account.stagedBalance - event.params.value
-  }
-
-  let contract = Contract.bind(event.address)
+  account.stagedBalance = contract.balanceOfStaged(Address.fromString(accountId))
   account.bondedBalance = contract.balanceOfBonded(Address.fromString(accountId))
   account.holdingBalance = contract.balanceOf(Address.fromString(accountId))
+  account.address = accountId
   log.debug("Withdrawing ESD from DAO {} {} {} {}", [event.params.account.toHexString(), account.stagedBalance.toString(), account.bondedBalance.toString(), account.holdingBalance.toString()])
   // account.holdingBalance = account.holdingBalance - event.params.value
-  let epochNo = getEpoch(event.block.timestamp.toI32())
   account.epochNo = epochNo
   account.save()
 }
@@ -184,30 +183,63 @@ export function handleWithdraw(event: Withdraw): void {
 
 export function handleBond(event: Bond): void {
   let accountId = event.params.account.toHexString()
-  let account = Account.load(accountId)
+  let epochNo = event.params.start - BigInt.fromI32(1)
+  let account = Account.load(accountId + epochNo.toString())
   if (account == null){
-    account = new Account(accountId)
+    account = new Account(accountId + epochNo.toString())
   }
+
   let contract = Contract.bind(event.address)
-  account.bondedBalance = account.bondedBalance + event.params.value
   account.epochNo = event.params.start - BigInt.fromI32(1)
-  account.stagedBalance = account.stagedBalance - event.params.value
+  account.bondedBalance = contract.balanceOfBonded(Address.fromString(accountId))
+  account.stagedBalance = contract.balanceOfStaged(Address.fromString(accountId))
   account.holdingBalance = contract.balanceOf(Address.fromString(accountId))
+  account.address = accountId
   log.debug("Bonding ESD to DAO {} {} {} {} {}", [event.params.start.toHexString(), event.params.account.toHexString(), account.stagedBalance.toString(), account.bondedBalance.toString(), account.holdingBalance.toString()])
   account.save()
 }
 
 export function handleUnbond(event: Unbond): void {
   let accountId = event.params.account.toHexString()
-  let account = Account.load(accountId)
+  let epochNo = event.params.start - BigInt.fromI32(1)
+  let account = Account.load(accountId + epochNo.toString())
   if (account == null){
-    account = new Account(accountId)
+    account = new Account(accountId + epochNo.toString())
   }
+
   let contract = Contract.bind(event.address)
-  account.bondedBalance = account.bondedBalance - event.params.value
   account.epochNo = event.params.start - BigInt.fromI32(1)
-  account.stagedBalance = account.stagedBalance + event.params.value
+  account.bondedBalance = contract.balanceOfBonded(Address.fromString(accountId))
+  account.stagedBalance = contract.balanceOfStaged(Address.fromString(accountId))
   account.holdingBalance = contract.balanceOf(Address.fromString(accountId))
+  account.address = accountId
   log.debug("Unbonding ESD to DAO {} {} {} {} {}", [event.params.start.toHexString(), event.params.account.toHexString(), account.stagedBalance.toString(), account.bondedBalance.toString(), account.holdingBalance.toString()])
   account.save()
+}
+
+export function handleTransfer(event: Transfer): void {
+  let from = event.params.from.toHexString()
+  let to = event.params.to.toHexString()
+  let contract = DollarContract.bind(event.address)
+  let epochNo = getEpoch(event.block.timestamp.toI32())
+  let account1 = Account.load(from + epochNo.toString())
+  if (account1 == null){
+    account1 = new Account(from + epochNo.toString())
+  }
+
+  let account2 = Account.load(to + epochNo.toString())
+  if (account2 == null){
+    account2 = new Account(to + epochNo.toString())
+  }
+
+  account1.epochNo = epochNo
+  account1.holdingBalance = contract.balanceOf(Address.fromString(from))
+  account1.address = from
+
+  account2.epochNo = epochNo
+  account2.holdingBalance = contract.balanceOf(Address.fromString(to))
+  account2.address = to
+  log.debug("Transfer of ESD {} {}", [event.params.from.toHexString(), event.params.to.toHexString()])
+  account1.save()
+  account2.save()
 }

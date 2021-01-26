@@ -456,20 +456,21 @@ export class Account extends Entity {
     }
   }
 
-  get epochNo(): BigInt | null {
+  get epochNo(): BigInt {
     let value = this.get("epochNo");
-    if (value === null || value.kind == ValueKind.NULL) {
-      return null;
-    } else {
-      return value.toBigInt();
-    }
+    return value.toBigInt();
   }
 
-  set epochNo(value: BigInt | null) {
-    if (value === null) {
-      this.unset("epochNo");
-    } else {
-      this.set("epochNo", Value.fromBigInt(value as BigInt));
-    }
+  set epochNo(value: BigInt) {
+    this.set("epochNo", Value.fromBigInt(value));
+  }
+
+  get address(): string {
+    let value = this.get("address");
+    return value.toString();
+  }
+
+  set address(value: string) {
+    this.set("address", Value.fromString(value));
   }
 }

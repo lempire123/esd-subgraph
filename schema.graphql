@@ -33,5 +33,6 @@ type Account @entity {
   stagedBalance: BigInt
   bondedBalance: BigInt
   holdingBalance: BigInt
-  epochNo: BigInt
+  epochNo: BigInt!
+  address: String!
 }
