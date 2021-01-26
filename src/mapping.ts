@@ -9,7 +9,9 @@ import {
   SupplyIncrease,
   SupplyNeutral,
   Deposit,
-  Withdraw
+  Withdraw,
+  Bond,
+  Unbond
 } from "../generated/Contract/Contract"
 import {
   LPContract,
@@ -21,6 +23,7 @@ import {
   UniswapV2PairContract,
 } from "../generated/Contract/UniswapV2PairContract"
 import { Epoch, Account } from "../generated/schema"
+import { getEpoch } from "./helper"
 
 // epochs needed to expire the coupons
 let COUPON_EXPIRATION = BigInt.fromI32(90)
@@ -134,12 +137,15 @@ export function handleSupplyNeutral(event: SupplyNeutral): void {
   epoch.save()
 }
 
-
 // Account methods
 
+// handles deposit to DAO, funds move to staging
 export function handleDeposit(event: Deposit): void {
   let accountId = event.params.account.toHexString()
-  let account = new Account(accountId)
+  let account = Account.load(accountId)
+  if (account == null){
+    account = new Account(accountId)
+  }
 
   let contract = Contract.bind(event.address)
   account.stagedBalance = account.stagedBalance + event.params.value
@@ -147,6 +153,9 @@ export function handleDeposit(event: Deposit): void {
   account.holdingBalance = contract.balanceOf(Address.fromString(accountId))
   log.debug("Depositing ESD to DAO {} {} {} {}", [event.params.account.toHexString(), account.stagedBalance.toString(), account.bondedBalance.toString(), account.holdingBalance.toString()])
   // account.holdingBalance = account.holdingBalance - event.params.value
+
+  let epochNo = getEpoch(event.block.timestamp.toI32())
+  account.epochNo = epochNo
   account.save()
 }
 
@@ -167,5 +176,38 @@ export function handleWithdraw(event: Withdraw): void {
   account.holdingBalance = contract.balanceOf(Address.fromString(accountId))
   log.debug("Withdrawing ESD from DAO {} {} {} {}", [event.params.account.toHexString(), account.stagedBalance.toString(), account.bondedBalance.toString(), account.holdingBalance.toString()])
   // account.holdingBalance = account.holdingBalance - event.params.value
+  let epochNo = getEpoch(event.block.timestamp.toI32())
+  account.epochNo = epochNo
+  account.save()
+}
+
+
+export function handleBond(event: Bond): void {
+  let accountId = event.params.account.toHexString()
+  let account = Account.load(accountId)
+  if (account == null){
+    account = new Account(accountId)
+  }
+  let contract = Contract.bind(event.address)
+  account.bondedBalance = account.bondedBalance + event.params.value
+  account.epochNo = event.params.start - BigInt.fromI32(1)
+  account.stagedBalance = account.stagedBalance - event.params.value
+  account.holdingBalance = contract.balanceOf(Address.fromString(accountId))
+  log.debug("Bonding ESD to DAO {} {} {} {} {}", [event.params.start.toHexString(), event.params.account.toHexString(), account.stagedBalance.toString(), account.bondedBalance.toString(), account.holdingBalance.toString()])
+  account.save()
+}
+
+export function handleUnbond(event: Unbond): void {
+  let accountId = event.params.account.toHexString()
+  let account = Account.load(accountId)
+  if (account == null){
+    account = new Account(accountId)
+  }
+  let contract = Contract.bind(event.address)
+  account.bondedBalance = account.bondedBalance - event.params.value
+  account.epochNo = event.params.start - BigInt.fromI32(1)
+  account.stagedBalance = account.stagedBalance + event.params.value
+  account.holdingBalance = contract.balanceOf(Address.fromString(accountId))
+  log.debug("Unbonding ESD to DAO {} {} {} {} {}", [event.params.start.toHexString(), event.params.account.toHexString(), account.stagedBalance.toString(), account.bondedBalance.toString(), account.holdingBalance.toString()])
   account.save()
 }

@@ -455,4 +455,21 @@ export class Account extends Entity {
       this.set("holdingBalance", Value.fromBigInt(value as BigInt));
     }
   }
+
+  get epochNo(): BigInt | null {
+    let value = this.get("epochNo");
+    if (value === null || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBigInt();
+    }
+  }
+
+  set epochNo(value: BigInt | null) {
+    if (value === null) {
+      this.unset("epochNo");
+    } else {
+      this.set("epochNo", Value.fromBigInt(value as BigInt));
+    }
+  }
 }
